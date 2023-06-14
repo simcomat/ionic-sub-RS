@@ -1,10 +1,16 @@
 from typing import Union
-from pymatgen.core import Structure
+from pymatgen.core import Structure, Element
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from gensim.models import KeyedVectors
 import json
 import gzip
+
+
+def get_anonymous_struct(s):
+    s1 = s.copy()
+    s1.replace_species({e: Element('C') for e in set(s.species)})
+    return s1.get_primitive_structure()
 
 
 def get_as_label(structure: Structure, symprec=0.1) -> str:
@@ -55,7 +61,7 @@ def get_as_label(structure: Structure, symprec=0.1) -> str:
         # old wyckoff_symbols: ['1a', '1b', '3c']
         # new_wyckoff_symbols: ['1(m-3m)', '1(m-3m)', '3(m-3m)']
         # print(wyckoff_to_site_sym, wyckoff_symbols, new_wyckoff_symbols)
-        label = f"{sg_number}_{nsites}_{'-'.join(new_wyckoff_symbols)}"
+        label = f"{sg_number}_{nsites}_{'_'.join(new_wyckoff_symbols)}"
 
         return label
     except:
@@ -265,13 +271,17 @@ class OccupationData:
         AnonymousMotif
             The AnonymousMotif object with the given structure, or None if no such AM exists.
         """
-        struct_AM_label = get_as_label(structure)
+        anonymous_structure = get_anonymous_struct(structure)
+        struct_AM_label = get_as_label(anonymous_structure)
         sm = StructureMatcher(stol=0.15)
         for AM in self.AM_list:
-            vanilla_label = '_'.join(AM['AM_label'].split('-')[:-1])
+            vanilla_label = '_'.join(AM['AM_label'].split('_')[:-1])
             if vanilla_label == struct_AM_label:
-                example_structure = AM['AM_example_structure']
-                if sm.fit_anonymous(example_structure, structure):
+                example_structure = Structure.from_str(
+                    AM['AM_example_structure']['structure'], fmt='json')
+                groups = sm.group_structures(
+                    [example_structure, anonymous_structure])
+                if len(groups) > 1:
                     return AnonymousMotif(AM)
         return None
 
@@ -381,7 +391,7 @@ class RecommenderSystem:
                         else:
                             return False
 
-    def get_recommendation_for_ion(self, ion: str) -> list[tuple[str, float, bool]]:
+    def get_recommendation_for_ion(self, ion: str, top_n: int = None) -> list[tuple[str, float, bool]]:
         """
         Generate a list of site recommendations for a given ion.
 
@@ -393,6 +403,8 @@ class RecommenderSystem:
         ----------
         ion : str
             The ion for which site recommendations are to be generated.
+        top_n: int 
+            The size limit of the recommendations list.
 
         Returns
         -------
@@ -413,9 +425,13 @@ class RecommenderSystem:
                     (site, dist, recommendation_novelty))
 
         recommendation_list.sort(key=lambda x: x[1])
+        if top_n:
+            if len(recommendation_list) > top_n:
+                recommendation_list = recommendation_list[:top_n]
+
         return recommendation_list
 
-    def get_recommendation_for_site(self, site: str) -> list[tuple[str, float, bool]]:
+    def get_recommendation_for_site(self, site: str, top_n: int = None) -> list[tuple[str, float, bool]]:
         """
         Generate a list of ion recommendations for a given site.
 
@@ -427,6 +443,8 @@ class RecommenderSystem:
         ----------
         site : str
             The site for which ion recommendations are to be generated.
+        top_n: int 
+            The size limit of the recommendations list.
 
         Returns
         -------
@@ -448,6 +466,10 @@ class RecommenderSystem:
                 recommendation_list.append((ion, dist, recommendation_novelty))
 
         recommendation_list.sort(key=lambda x: x[1])
+        if top_n:
+            if len(recommendation_list) > top_n:
+                recommendation_list = recommendation_list[:top_n]
+
         return recommendation_list
 
     def get_recommendation_for_AM(self, AM: AnonymousMotif) -> dict[AMSite, list[tuple[str, float, bool]]]:
