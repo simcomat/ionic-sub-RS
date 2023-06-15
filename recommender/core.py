@@ -391,7 +391,7 @@ class RecommenderSystem:
                         else:
                             return False
 
-    def get_recommendation_for_ion(self, ion: str, top_n: int = None) -> list[tuple[str, float, bool]]:
+    def get_recommendation_for_ion(self, ion: str, top_n: int = None, only_new: bool = False) -> list[tuple[str, float, bool]]:
         """
         Generate a list of site recommendations for a given ion.
 
@@ -405,6 +405,8 @@ class RecommenderSystem:
             The ion for which site recommendations are to be generated.
         top_n: int 
             The size limit of the recommendations list.
+        only_new: bool
+            Only returns recommendation for new ion-site occupations.
 
         Returns
         -------
@@ -429,9 +431,12 @@ class RecommenderSystem:
             if len(recommendation_list) > top_n:
                 recommendation_list = recommendation_list[:top_n]
 
+        if only_new:
+            recommendation_list = [t for t in recommendation_list if t[2]]
+
         return recommendation_list
 
-    def get_recommendation_for_site(self, site: str, top_n: int = None) -> list[tuple[str, float, bool]]:
+    def get_recommendation_for_site(self, site: str, top_n: int = None, only_new: bool = False) -> list[tuple[str, float, bool]]:
         """
         Generate a list of ion recommendations for a given site.
 
@@ -445,6 +450,8 @@ class RecommenderSystem:
             The site for which ion recommendations are to be generated.
         top_n: int 
             The size limit of the recommendations list.
+        only_new: bool
+            Only returns recommendation for new ion-site occupations.
 
         Returns
         -------
@@ -469,6 +476,9 @@ class RecommenderSystem:
         if top_n:
             if len(recommendation_list) > top_n:
                 recommendation_list = recommendation_list[:top_n]
+
+        if only_new:
+            recommendation_list = [t for t in recommendation_list if t[2]]
 
         return recommendation_list
 
