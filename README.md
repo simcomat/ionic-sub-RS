@@ -5,7 +5,7 @@ This repository hosts the dataset and supporting resources related to the resear
 ## Repository Content
 
 1. Data Files:
-   - `data/occupancy_data.json.gz`: This file provides the underlying data from [OQMD v1.5](https://static.oqmd.org/static/downloads/qmdb__v1_5__102021.sql.gz) used to build the graphs, denoted as $G^T$.
+   - `data/occupancy_data.json.gz`: This file provides the underlying data from [OQMD v1.5](https://static.oqmd.org/static/downloads/qmdb__v1_5__102021.sql.gz) used to build the graphs $G^T$.
    - `G100.gexf`: This file contains the graph denoted as $G^{100}$. It is the optimal graph used to build the recommender system.
    - `G000.gexf`: This file contains the graph denoted as $G^{0}$. It is the graph used to make the UMAP 2D visualization of the embedding of ions and sites of stable compounds.
 
