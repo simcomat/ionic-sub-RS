@@ -22,7 +22,7 @@ This repository hosts the dataset and supporting resources related to the resear
 
 - `Getting_recommendations.ipynb`: This Jupyter notebook demonstrates how to utilize the classes defined in `recommender/core.py` to generate ion-site recommendations.
 
-By providing this comprehensive set of data, models, and tools, this repository facilitates the replication and extension of our work. This can lead to further advancements in the field and may spur the discovery of previously unknown stable compounds.
+By providing this comprehensive set of data, models, and tools, this repository facilitates the replication and extension of our work (i.e., finding new stable compounds).
 
 ## Description of the Occupancy Data JSON Structure
 
