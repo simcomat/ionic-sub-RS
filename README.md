@@ -117,6 +117,7 @@ Root Level
      ├─ AM_has_ambiguous_wyckoff: bool
      ├─ n_ambiguous_wyckoff: int
      ├─ ambiguous_wyckoff: dict | None
+     ├─ stoichiometry_distribution: dict[str, int]
      ├─ site_symmetry_distribution: dict[str, int]
      ├─ n_entries: int
      ├─ entries_ids: list[int]

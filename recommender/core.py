@@ -107,6 +107,7 @@ class AMSite:
         self.site_sym = (int(site_sym_parts[0]), site_sym_parts[1][:-1])
         self.subgroup_number = int(self.AM_label.split('_')[-1])
         self.site_index = AMSite_dict['site_index']
+        self.CNNf_median = AMSite_dict['CNNf_median']
 
     def __repr__(self):
         """
@@ -119,7 +120,7 @@ class AMSite:
         str
             A string representation of the AMSite object.
         """
-        return f'{(self.space_group, self.nsites, self.site_sym, self.subgroup_number)}, site index: {self.site_index}'
+        return f'{(self.space_group, self.nsites, self.site_sym, self.subgroup_number)}\nsite index: {self.site_index}'
 
 
 class AnonymousMotif:
@@ -176,6 +177,7 @@ class AnonymousMotif:
         self.equivalent_sites_indexes = example_structure_dict['eq_sites']
 
         self.sites = [AMSite(site_dict) for site_dict in AM_dict['sites']]
+        self.entries_ids = AM_dict['entries_ids']
         data = AM_dict.copy()
         del data['sites']
         self.data = data
@@ -213,13 +215,15 @@ class OccupationData:
         # with open(json_file_path, 'r') as f:
         #     self.data = json.load(f)
         self.AM_list = self.data['AM_list']
+        self.cnn_labels_dict = {value: index for index,
+                                value in enumerate(self.data['cnn_dimensions'])}
         # AM_sites_list = []
         # for AM in self.AM_list:
         #     for site in AM['sites']:
         #         AM_sites_list.append(site['label'])
         # self.AM_sites_list = AM_sites_list
 
-    def get_AnonymousMotif(self, AM_label):
+    def get_AnonymousMotif(self, AM_label: str):
         """
         Returns the AnonymousMotif object with the given label.
 
@@ -238,7 +242,7 @@ class OccupationData:
                 return AnonymousMotif(AM)
         return None
 
-    def get_AM_from_OQMD_id(self, id) -> Union[AnonymousMotif, None]:
+    def get_AM_from_OQMD_id(self, id: int) -> Union[AnonymousMotif, None]:
         """
         Returns the AnonymousMotif object with the given id.
 
@@ -285,7 +289,7 @@ class OccupationData:
                     return AnonymousMotif(AM)
         return None
 
-    def get_AMSite(self, AM_site_label):
+    def get_AMSite(self, AM_site_label: str):
         """
         Returns the AMSite object with the given label.
 
@@ -299,7 +303,7 @@ class OccupationData:
         AMSite
             The AMSite object with the given label, or None if no such site exists.
         """
-        AM_label = AM_site_label.split['['][0]
+        AM_label = AM_site_label.split('[')[0]
         for AM in self.AM_list:
             if AM['AM_label'] == AM_label:
                 for site in AM['sites']:
@@ -391,7 +395,7 @@ class RecommenderSystem:
                         else:
                             return False
 
-    def get_recommendation_for_ion(self, ion: str, top_n: int = None, only_new: bool = False) -> list[tuple[str, float, bool]]:
+    def get_recommendation_for_ion(self, ion: str, top_n: int = None, only_new: bool = False, local_geometry: tuple = None) -> list[tuple[str, AMSite, bool]]:
         """
         Generate a list of site recommendations for a given ion.
 
@@ -410,7 +414,7 @@ class RecommenderSystem:
 
         Returns
         -------
-        list[tuple[str, float, bool]]
+        list[tuple[str, AMSite, bool]]
             Each tuple consists of a recommended site label, the distance of the site from the ion in the embedding 
             space, and a boolean indicating whether the recommendation is novel.
         """
@@ -427,6 +431,21 @@ class RecommenderSystem:
                     (site, dist, recommendation_novelty))
 
         recommendation_list.sort(key=lambda x: x[1])
+        recommendation_list = [(self.occupation_data.get_AMSite(t[0]),
+                               t[1],
+                               t[2]) for t in recommendation_list]
+
+        recommendation_list_filtered = []
+        if local_geometry:
+            local_geometry_label, local_geometry_min_value = local_geometry
+            local_geometry_index = self.occupation_data.cnn_labels_dict[local_geometry_label]
+            for rec in recommendation_list:
+                site = rec[0]
+                site_CNNf_median = site.CNNf_median
+                if site_CNNf_median[local_geometry_index] >= local_geometry_min_value:
+                    recommendation_list_filtered.append(rec)
+            recommendation_list = recommendation_list_filtered
+
         if top_n:
             if len(recommendation_list) > top_n:
                 recommendation_list = recommendation_list[:top_n]
@@ -473,6 +492,7 @@ class RecommenderSystem:
                 recommendation_list.append((ion, dist, recommendation_novelty))
 
         recommendation_list.sort(key=lambda x: x[1])
+
         if top_n:
             if len(recommendation_list) > top_n:
                 recommendation_list = recommendation_list[:top_n]
