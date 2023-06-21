@@ -22,7 +22,7 @@ This repository hosts the dataset and supporting resources related to the resear
 
 ## Demonstrations
 
-- `Getting_recommendations.ipynb`: This Jupyter notebook demonstrates how to utilize the classes defined in `recommender/core.py` to generate ion-site recommendations. You can run it locally (by cloning this repository to your machine) or in the cloud here [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/simcomat/ionic-sub-RS/blob/main/Getting_recommendations.ipynb)
+- `Getting_recommendations.ipynb`: This Jupyter notebook demonstrates how to utilize the classes defined in `recommender/core.py` to generate ion-site recommendations. You can run it locally (by cloning this repository to your machine) or in the cloud here <a target="_blank" href="https://colab.research.google.com/github/simcomat/ionic-sub-RS"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 By providing this comprehensive set of data, models, and tools, this repository facilitates the replication and extension of our work (i.e., finding new stable compounds).
 
