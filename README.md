@@ -1,4 +1,4 @@
-# 'Ionic Substitution Graph Recommender System: A Pathway to Novel Materials' Repository
+# 'Exploring chemical compound space with a graph-based recommender system' Repository
 
 This repository hosts the dataset and supporting resources related to the research paper "Exploring chemical compound space with a graph-based recommender system" by Elton Ogoshi and co-authors.
 
