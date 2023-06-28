@@ -5,6 +5,10 @@ This repository hosts the dataset and supporting resources related to the resear
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/simcomat/ionic-sub-RS/blob/main/LICENSE)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/simcomat/ionic-sub-RS/blob/main/Getting_recommendations.ipynb)
 
+<p align="center">
+<img src="etc/graph.png" alt="drawing" width="800"/>
+</p>
+
 ## Repository Content
 
 1. Data Files:
