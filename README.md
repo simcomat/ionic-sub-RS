@@ -1,6 +1,6 @@
 # 'Exploring chemical compound space with a graph-based recommender system' Repository
 
-This repository hosts the dataset and supporting resources related to the research paper "Exploring chemical compound space with a graph-based recommender system" by Elton Ogoshi and co-authors.
+This repository hosts the dataset and supporting resources related to the research paper ["Exploring chemical compound space with a graph-based recommender system"](https://arxiv.org/abs/2306.16496) by Elton Ogoshi and co-authors.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/simcomat/ionic-sub-RS/blob/main/LICENSE)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/simcomat/ionic-sub-RS/blob/main/Getting_recommendations.ipynb)
