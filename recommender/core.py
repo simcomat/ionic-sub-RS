@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Union
 from pymatgen.core import Structure, Element
 from pymatgen.analysis.structure_matcher import StructureMatcher
@@ -395,7 +396,7 @@ class RecommenderSystem:
                         else:
                             return False
 
-    def get_recommendation_for_ion(self, ion: str, top_n: int = None, only_new: bool = False, local_geometry: tuple = None) -> list([tuple([str, AMSite, bool])]):
+    def get_recommendation_for_ion(self, ion: str, top_n: int = None, only_new: bool = False, local_geometry: tuple = None) -> list[tuple[str, AMSite, bool]]:
         """
         Generate a list of site recommendations for a given ion.
 
@@ -455,7 +456,7 @@ class RecommenderSystem:
 
         return recommendation_list
 
-    def get_recommendation_for_site(self, site: str, top_n: int = None, only_new: bool = False) -> list([tuple([str, float, bool])]):
+    def get_recommendation_for_site(self, site: str, top_n: int = None, only_new: bool = False) -> list[tuple[str, float, bool]]:
         """
         Generate a list of ion recommendations for a given site.
 
@@ -502,7 +503,7 @@ class RecommenderSystem:
 
         return recommendation_list
 
-    def get_recommendation_for_AM(self, AM: AnonymousMotif) -> dict(AMSite = list([tuple([str, float, bool])])):
+    def get_recommendation_for_AM(self, AM: AnonymousMotif) -> dict[AMSite, list[tuple[str, float, bool]]]:
         """
         Generate a dictionary of ion recommendations for each site of an Anonymous Motif (AM).
 
