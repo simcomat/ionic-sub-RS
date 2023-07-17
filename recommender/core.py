@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Union
 from pymatgen.core import Structure, Element
 from pymatgen.analysis.structure_matcher import StructureMatcher
