@@ -123,6 +123,16 @@ class AMSite:
         """
         return f'{(self.space_group, self.nsites, self.site_sym, self.subgroup_number)}\nsite index: {self.site_index}'
 
+    def __eq__(self,another: AMSite):
+        """
+        Checks if another AMsite is the same as self.
+
+        Returns
+        -------
+        bool
+            True if AMsites are the same, False otherwise.
+        """
+        return self.data == another.data
 
 class AnonymousMotif:
     """
