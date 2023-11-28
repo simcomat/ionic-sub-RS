@@ -526,6 +526,6 @@ class RecommenderSystem:
         """
         recommendations = dict()
         for site in AM.sites:
-            recommendations[site] = self.get_recommendation_for_site(
+            recommendations[site.label] = self.get_recommendation_for_site(
                 site.label)
         return recommendations
