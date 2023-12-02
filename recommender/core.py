@@ -625,6 +625,36 @@ class RecommenderSystem:
         return recommendations_compounds
 
 
+    def get_recommendation_for_compound(self, formula: str, top_n: int = 500) -> dict[AMSite, list[tuple[str, float, bool]]]:
+        """
+        Generates a dictionary of recommended compounds with the specified formula.
+
+        The method starts by generating recommendations of compounds in a chemical system, and then selects only the ones matching
+        the specified chemical formula.
+
+        Parameters
+        ----------
+        formula : str
+            The chemical formula for which we want recommendations.
+        top_n : int
+            The number of top recommendations for each atom.
+
+        Returns
+        -------
+        dict[str, list[tuple[str, float, bool]], str, list, dict, float, float]
+            A dictionary carrying information about each recommended compound: formula, Anonymous Motif, Anonymous Motif label,
+            list of atom recommendation for each wickoff position of the Anonymous Motif, list of dictionaries with oxidation
+            states of the compound, sum of all the atom-site distances, and novelty (site-atom occupancy) fraction.
+        """
+        comp = Composition(formula)
+        elements = comp.chemical_system.split('-')
+        recommended_compounds_in_chemsys = self.get_recommendation_for_chemsys(elements, top_n=top_n)
+        reduced_formula = Composition(formula).reduced_formula
+        matches_idx = [ i for i, compound in enumerate(recommended_compounds_in_chemsys['formula']) if compound==reduced_formula ]
+        recommendations = { key:[values[i] for i in matches_idx] for key, values in recommended_compounds_in_chemsys.items() }
+
+        return recommendations
+
 
 def list_to_formula(compound: list, AM: AnonymousMotif) -> tuple[str, dict]:
     """
