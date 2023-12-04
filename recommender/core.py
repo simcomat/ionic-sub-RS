@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Union
-from pymatgen.core import Structure, Element
+from pymatgen.core import Structure, Element, Composition, periodic_table
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from gensim.models import KeyedVectors
@@ -123,6 +123,16 @@ class AMSite:
         """
         return f'{(self.space_group, self.nsites, self.site_sym, self.subgroup_number)}\nsite index: {self.site_index}'
 
+    def __eq__(self,another: AMSite):
+        """
+        Checks if another AMsite is the same as self.
+
+        Returns
+        -------
+        bool
+            True if AMsites are the same, False otherwise.
+        """
+        return self.data == another.data
 
 class AnonymousMotif:
     """
@@ -526,6 +536,135 @@ class RecommenderSystem:
         """
         recommendations = dict()
         for site in AM.sites:
-            recommendations[site] = self.get_recommendation_for_site(
+            recommendations[site.label] = self.get_recommendation_for_site(
                 site.label)
         return recommendations
+
+
+    def get_recommendation_for_chemsys(self, elements: list, top_n: int = 500) -> dict[str, list[tuple[str, float, bool]], str, list, dict, float, float]:
+        """
+        Generates a dictionary of recommended compounds in the specified chemical system.
+
+        The method starts by generating recommendations for the atoms in the chemical system, then checks which Anonymous Motifs
+        got recommended for every atom in the chemical system, finally selecting Anonymous Motifs whose AMSites were all recommended.
+        The method returns a dictionary of the recommended compounds and information about them.
+
+        Parameters
+        ----------
+        elements : list
+            The chemical elements defining the chemical space.
+        top_n : int
+            The number of top recommendations for each atom.
+
+        Returns
+        -------
+        dict[str, list[tuple[str, float, bool]], str, list, dict, float, float]
+            A dictionary carrying information about each recommended compound: formula, Anonymous Motif, Anonymous Motif label,
+            list of atom recommendation for each wickoff position of the Anonymous Motif, list of dictionaries with oxidation
+            states of the compound, sum of all the atom-site distances, and novelty (site-atom occupancy) fraction.
+        """
+        elements=list(set(elements))
+        assert all([ periodic_table.ElementBase.is_valid_symbol(el) for el in elements]), "One or more of the input elements are not valid."
+
+        # Gets top_n recommendations for each atomic element in compound
+        recommendations_atoms = { atom:self.get_recommendation_for_ion(atom, top_n=top_n, only_new=False) for atom in elements }
+
+        # Anonymous Motifs recommended simultaneously for all the elements
+        AMlabels = { item[0]:[ rec[0].AM_label for rec in item[1] ] for item in recommendations_atoms.items() }
+        AMs_intersect = list(set.intersection(*map(set,AMlabels.values())))
+
+        # Dictionary that will collect the recommended compounds
+        recommendations_compounds={'formula':[],'AM':[],'AM_label':[],'atom_AMsites':[],'oxidation_states':[],'sum_SiteAtom_dists':[],'novelty_fraction':[]}
+
+        # Loops over the labels (corresponding to Anonymous Motifs for which there are recommendations for all the atoms in the compound
+        for label in AMs_intersect:
+            AM=self.occupation_data.get_AnonymousMotif(label)
+
+            AMsites={}
+            rec_AMsites={}
+            for k in AMlabels.keys():
+                AMsites[k]=[ recommendations_atoms[k][i] for i, lab in enumerate(AMlabels[k]) if lab==label ]
+                rec_AMsites[k]=[]
+                rec_AMsites[k+'_dists']=[]
+
+            for i, site in enumerate(AM.sites): # Loops over the AMSites in the current AM
+                for k in AMsites.keys(): # Loops over each atom in the compound
+                    if any([ amsite[0]==site for amsite in AMsites[k] ]):
+                        rec_AMsites[k].append(i)
+            total_recs=list(set(sum([rec_AMsites[k] for k in rec_AMsites.keys()],[])))
+            if len(total_recs) == len(AM.sites):
+                inv_dict = {site_idx:[] for site_idx in range(len(AM.sites))} # Dictionary of recommended atoms for each AMSite in the current AM
+                for atom, site_indices in rec_AMsites.items():
+                    for site_idx in site_indices:
+                        inv_dict[site_idx].append(atom)
+                # Avoiding the use of itertools
+                compounds = [[]]
+                for proposed_atoms in [atom for site_idx, atom in inv_dict.items()]:
+                    compounds = [ x+[y] for x in compounds for y in proposed_atoms ]
+
+                # Collects information on each recommended compound
+                for compound in compounds:
+                    formula, oxi_states=list_to_formula(compound, AM) # Reduced formula and oxidation states
+                    # Total atom-site distance and novelty fraction
+                    total_dist=0
+                    novelty_fraction=0
+                    for ix,atom in enumerate(compound):
+                        site=(AM.sites)[ix]
+                        total_dist+=sum([ rec[1] for rec in recommendations_atoms[atom] if site==rec[0] ])
+                        novelty_fraction+=sum([ rec[2] for rec in recommendations_atoms[atom] if site==rec[0] ])
+                    novelty_fraction/=len(AM.sites)
+
+                    recommendations_compounds['formula'].append(formula)
+                    recommendations_compounds['AM'].append(AM)
+                    recommendations_compounds['AM_label'].append(label)
+                    recommendations_compounds['atom_AMsites'].append(compound)
+                    recommendations_compounds['oxidation_states'].append(oxi_states)
+                    recommendations_compounds['sum_SiteAtom_dists'].append(total_dist)
+                    recommendations_compounds['novelty_fraction'].append(novelty_fraction)
+
+        return recommendations_compounds
+
+
+    def get_recommendation_for_compound(self, formula: str, top_n: int = 500) -> dict[AMSite, list[tuple[str, float, bool]]]:
+        """
+        Generates a dictionary of recommended compounds with the specified formula.
+
+        The method starts by generating recommendations of compounds in a chemical system, and then selects only the ones matching
+        the specified chemical formula.
+
+        Parameters
+        ----------
+        formula : str
+            The chemical formula for which we want recommendations.
+        top_n : int
+            The number of top recommendations for each atom.
+
+        Returns
+        -------
+        dict[str, list[tuple[str, float, bool]], str, list, dict, float, float]
+            A dictionary carrying information about each recommended compound: formula, Anonymous Motif, Anonymous Motif label,
+            list of atom recommendation for each wickoff position of the Anonymous Motif, list of dictionaries with oxidation
+            states of the compound, sum of all the atom-site distances, and novelty (site-atom occupancy) fraction.
+        """
+        comp = Composition(formula)
+        elements = comp.chemical_system.split('-')
+        recommended_compounds_in_chemsys = self.get_recommendation_for_chemsys(elements, top_n=top_n)
+        reduced_formula = Composition(formula).reduced_formula
+        matches_idx = [ i for i, compound in enumerate(recommended_compounds_in_chemsys['formula']) if compound==reduced_formula ]
+        recommendations = { key:[values[i] for i in matches_idx] for key, values in recommended_compounds_in_chemsys.items() }
+
+        return recommendations
+
+
+def list_to_formula(compound: list, AM: AnonymousMotif) -> tuple[str, dict]:
+    """
+    Transforms a list of atoms (eg. ['A','B','B']) defining the occupation of the AMSites [1,2,3] of the AM given as input, into a
+    chemical formula for that compound (counts the multiplicity of each AMSite), eg. 'A3B4'.
+    """
+    # Counts occurrencies of each species
+    atom_count=[ [atom]*((AM.sites)[site_idx].site_sym[0]) for site_idx, atom in enumerate(compound) ]
+    atom_count=sum(atom_count,[])
+    occurrencies={atom:atom_count.count(atom) for atom in set(atom_count)} # This eliminates any atom with 0 count
+    comp=Composition(occurrencies)
+    return comp.reduced_formula, list(comp.oxi_state_guesses())
+
