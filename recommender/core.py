@@ -541,7 +541,7 @@ class RecommenderSystem:
         return recommendations
 
 
-    def get_recommendation_for_chemsys(self, elements: list, top_n: int = 500) -> dict[str, list[tuple[str, float, bool]], str, list, dict, float, float]:
+    def get_recommendation_for_chemsys(self, elements: list, top_n: int = 500, ignore_above_n: int = 300) -> dict[str, list[tuple[str, float, bool]], str, list, dict, float, float]:
         """
         Generates a dictionary of recommended compounds in the specified chemical system.
 
@@ -555,6 +555,8 @@ class RecommenderSystem:
             The chemical elements defining the chemical space.
         top_n : int
             The number of top recommendations for each atom.
+        ignore_above_n : int
+            Threshold to ignore Anonymous Motifs that give rise to too many compounds. 
 
         Returns
         -------
@@ -601,6 +603,8 @@ class RecommenderSystem:
                 compounds = [[]]
                 for proposed_atoms in [atom for site_idx, atom in inv_dict.items()]:
                     compounds = [ x+[y] for x in compounds for y in proposed_atoms ]
+                if len(compounds)>ignore_above_n: # Ignores AM resulting in too many compounds
+                    continue
 
                 # Collects information on each recommended compound
                 for compound in compounds:
