@@ -605,6 +605,8 @@ class RecommenderSystem:
                 # Collects information on each recommended compound
                 for compound in compounds:
                     formula, oxi_states=list_to_formula(compound, AM) # Reduced formula and oxidation states
+                    if not all([ e in formula for e in elements]): # Ignores compounds lacking at least one instance of elements
+                        continue
                     # Total atom-site distance and novelty fraction
                     total_dist=0
                     novelty_fraction=0
